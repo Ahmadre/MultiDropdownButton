@@ -1,6 +1,7 @@
 // The widget that is the button wrapping the menu items.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:multi_dropdown_button/src/helpers/menu_limits.dart';
 import 'package:multi_dropdown_button/src/routes/multi_dropdown_route.dart';
@@ -28,10 +29,12 @@ class MultiDropdownMenuItemButton<T> extends StatefulWidget {
   final BorderRadius borderRadius;
 
   @override
-  _MultiDropdownMenuItemButtonState<T> createState() => _MultiDropdownMenuItemButtonState<T>();
+  _MultiDropdownMenuItemButtonState<T> createState() =>
+      _MultiDropdownMenuItemButtonState<T>();
 }
 
-class _MultiDropdownMenuItemButtonState<T> extends State<MultiDropdownMenuItemButton<T>> {
+class _MultiDropdownMenuItemButtonState<T>
+    extends State<MultiDropdownMenuItemButton<T>> {
   void _handleFocusChange(bool focused) {
     final bool inTraditionalMode;
     switch (FocusManager.instance.highlightMode) {
@@ -58,34 +61,39 @@ class _MultiDropdownMenuItemButtonState<T> extends State<MultiDropdownMenuItemBu
   }
 
   void _handleOnTap() {
-    final MultiDropdownMenuItem<T> dropdownMenuItem = widget.route.items[widget.itemIndex].item!;
-
-    dropdownMenuItem.onTap?.call();
-
-    Navigator.pop(
-      context,
-      MultiDropdownRouteResult<T>(dropdownMenuItem.values),
-    );
+    if (widget.route.selectedIds.contains(widget.itemIndex)) {
+      widget.route.selectedIds.remove(widget.itemIndex);
+    } else {
+      widget.route.selectedIds.add(widget.itemIndex);
+    }
+    setState(() {});
   }
 
-  static const Map<ShortcutActivator, Intent> _webShortcuts = <ShortcutActivator, Intent>{
+  static const Map<ShortcutActivator, Intent> _webShortcuts =
+      <ShortcutActivator, Intent>{
     // On the web, up/down don't change focus, *except* in a <select>
     // element, which is what a dropdown emulates.
-    SingleActivator(LogicalKeyboardKey.arrowDown): DirectionalFocusIntent(TraversalDirection.down),
-    SingleActivator(LogicalKeyboardKey.arrowUp): DirectionalFocusIntent(TraversalDirection.up),
+    SingleActivator(LogicalKeyboardKey.arrowDown):
+        DirectionalFocusIntent(TraversalDirection.down),
+    SingleActivator(LogicalKeyboardKey.arrowUp):
+        DirectionalFocusIntent(TraversalDirection.up),
   };
 
   @override
   Widget build(BuildContext context) {
-    final MultiDropdownMenuItem<T> dropdownMenuItem = widget.route.items[widget.itemIndex].item!;
+    final MultiDropdownMenuItem<T> dropdownMenuItem =
+        widget.route.items[widget.itemIndex].item!;
     final CurvedAnimation opacity;
     final double unit = 0.5 / (widget.route.items.length + 1.5);
     if (widget.itemIndex == widget.route.selectedIds.first) {
-      opacity = CurvedAnimation(parent: widget.route.animation!, curve: const Threshold(0.0));
+      opacity = CurvedAnimation(
+          parent: widget.route.animation!, curve: const Threshold(0.0));
     } else {
-      final double start = (0.5 + (widget.itemIndex + 1) * unit).clamp(0.0, 1.0);
+      final double start =
+          (0.5 + (widget.itemIndex + 1) * unit).clamp(0.0, 1.0);
       final double end = (start + 1.5 * unit).clamp(0.0, 1.0);
-      opacity = CurvedAnimation(parent: widget.route.animation!, curve: Interval(start, end));
+      opacity = CurvedAnimation(
+          parent: widget.route.animation!, curve: Interval(start, end));
     }
     Widget child = Container(
       padding: widget.padding,
@@ -96,9 +104,13 @@ class _MultiDropdownMenuItemButtonState<T> extends State<MultiDropdownMenuItemBu
     if (widget.route.items.length == 1) {
       itemBorderRadius = widget.borderRadius;
     } else if (widget.itemIndex == 0) {
-      itemBorderRadius = BorderRadius.only(topLeft: widget.borderRadius.topLeft, topRight: widget.borderRadius.topRight);
+      itemBorderRadius = BorderRadius.only(
+          topLeft: widget.borderRadius.topLeft,
+          topRight: widget.borderRadius.topRight);
     } else if (widget.itemIndex == widget.route.items.length - 1) {
-      itemBorderRadius = BorderRadius.only(bottomLeft: widget.borderRadius.bottomLeft, bottomRight: widget.borderRadius.bottomRight);
+      itemBorderRadius = BorderRadius.only(
+          bottomLeft: widget.borderRadius.bottomLeft,
+          bottomRight: widget.borderRadius.bottomRight);
     } else {
       itemBorderRadius = BorderRadius.zero;
     }
@@ -110,7 +122,18 @@ class _MultiDropdownMenuItemButtonState<T> extends State<MultiDropdownMenuItemBu
         onTap: _handleOnTap,
         onFocusChange: _handleFocusChange,
         borderRadius: itemBorderRadius,
-        child: child,
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Checkbox(
+                value: widget.route.selectedIds.contains(widget.itemIndex),
+                onChanged: (val) => _handleOnTap(),
+              ),
+            ),
+            child,
+          ],
+        ),
       );
     }
     child = FadeTransition(opacity: opacity, child: child);

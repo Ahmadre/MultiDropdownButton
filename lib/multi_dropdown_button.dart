@@ -9,3 +9,5 @@ library multi_dropdown_button;
 
 export 'src/multi_dropdown_button.dart';
 export 'src/multi_dropdown_button_form_field.dart';
+
+export 'src/widgets/multi_dropdown_menu_item.dart';

@@ -112,7 +112,7 @@ class MultiDropdownButton<T> extends StatefulWidget {
               items.isEmpty ||
               values == null ||
               items.where((MultiDropdownMenuItem<T> item) {
-                    return item.values == values;
+                    return values.contains(item.value);
                   }).length ==
                   1,
           "There should be exactly one item with [MultiDropdownButton]'s value: "
@@ -341,7 +341,7 @@ class MultiDropdownButton<T> extends StatefulWidget {
 
 class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
     with WidgetsBindingObserver {
-  final List<int?> _selectedIds = <int?>[];
+  final List<int?>? _selectedIds = <int?>[];
   MultiDropdownRoute<T>? _dropdownRoute;
   Orientation? _lastOrientation;
   FocusNode? _internalNode;
@@ -394,6 +394,9 @@ class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
   }
 
   void _handleFocusChanged() {
+    if (!focusNode!.hasFocus) {
+      _handleTap();
+    }
     if (_hasPrimaryFocus != focusNode!.hasPrimaryFocus) {
       setState(() {
         _hasPrimaryFocus = focusNode!.hasPrimaryFocus;
@@ -430,21 +433,23 @@ class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
         (widget.values == null &&
             widget.items!
                 .where((MultiDropdownMenuItem<T> item) =>
-                    item.enabled && item.values == widget.values)
+                    item.enabled &&
+                    widget.values != null &&
+                    widget.values!.contains(item.value))
                 .isEmpty)) {
-      _selectedIds.clear();
+      _selectedIds?.clear();
       return;
     }
 
     assert(widget.items!
-            .where(
-                (MultiDropdownMenuItem<T> item) => item.values == widget.values)
+            .where((MultiDropdownMenuItem<T> item) =>
+                widget.values != null && widget.values!.contains(item.value))
             .length ==
         1);
     for (int itemIndex = 0; itemIndex < widget.items!.length; itemIndex++) {
-      if (widget.items![itemIndex].values == widget.values &&
-          !_selectedIds.contains(itemIndex)) {
-        _selectedIds.add(itemIndex);
+      if (widget.values!.contains(widget.items![itemIndex].value) &&
+          !_selectedIds!.contains(itemIndex)) {
+        _selectedIds!.add(itemIndex);
         return;
       }
     }
@@ -490,7 +495,9 @@ class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
       items: menuItems,
       buttonRect: menuMargin.resolve(textDirection).inflateRect(itemRect),
       padding: kMenuItemPadding.resolve(textDirection),
-      selectedIds: _selectedIds.isNotEmpty ? _selectedIds as List<int> : [0],
+      selectedIds: _selectedIds != null && _selectedIds!.isNotEmpty
+          ? _selectedIds as List<int>
+          : [0],
       elevation: widget.elevation,
       capturedThemes:
           InheritedTheme.capture(from: context, to: navigator.context),
@@ -503,12 +510,13 @@ class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
       borderRadius: widget.borderRadius,
     );
 
-    navigator
-        .push(_dropdownRoute!)
-        .then<void>((MultiDropdownRouteResult<T>? newValue) {
+    navigator.push(_dropdownRoute!).whenComplete(() {
+      if (!mounted || _selectedIds == null) return;
+      var result = menuItems
+      .where((item) => _selectedIds!.contains(menuItems.indexOf(item)))
+      .map((e) => e.item!.value).toList();
       _removeDropdownRoute();
-      if (!mounted || newValue == null) return;
-      widget.onChanged?.call(newValue.result);
+      widget.onChanged?.call(result);
     });
 
     widget.onTap?.call();
@@ -623,7 +631,9 @@ class _MultiDropdownButtonState<T> extends State<MultiDropdownButton<T>>
       innerItemsWidget = Container();
     } else {
       innerItemsWidget = IndexedStack(
-        index: _selectedIds.isNotEmpty ? _selectedIds.first : hintIndex,
+        index: _selectedIds != null && _selectedIds!.isNotEmpty
+            ? _selectedIds!.first
+            : hintIndex,
         alignment: widget.alignment,
         children: widget.isDense
             ? items

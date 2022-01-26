@@ -12,8 +12,9 @@ class MultiDropdownMenuItem<T> extends MultiDropdownMenuItemContainer {
   const MultiDropdownMenuItem({
     Key? key,
     this.onTap,
-    this.values,
+    this.value,
     this.enabled = true,
+    this.selected = false,
     AlignmentGeometry alignment = AlignmentDirectional.centerStart,
     required Widget child,
   }) : super(key: key, alignment: alignment, child: child);
@@ -24,10 +25,17 @@ class MultiDropdownMenuItem<T> extends MultiDropdownMenuItemContainer {
   /// The value to return if the user selects this menu item.
   ///
   /// Eventually returned in a call to [DropdownButton.onChanged].
-  final List<T?>? values;
+  final T? value;
 
   /// Whether or not a user can select this menu item.
   ///
   /// Defaults to `true`.
   final bool enabled;
+
+  /// Whether item is select by the user.
+  ///
+  /// Defaults to `false`.
+  final bool selected;
+
+  set selected(bool val) => selected = val;
 }

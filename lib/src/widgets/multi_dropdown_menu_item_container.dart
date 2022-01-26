@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:multi_dropdown_button/src/helpers/constants.dart';
 
-class MultiDropdownMenuItemContainer extends StatelessWidget {
+class MultiDropdownMenuItemContainer extends StatefulWidget {
   /// Creates an item for a dropdown menu.
   ///
   /// The [child] argument is required.
@@ -32,11 +32,16 @@ class MultiDropdownMenuItemContainer extends StatelessWidget {
   final AlignmentGeometry alignment;
 
   @override
+  State<MultiDropdownMenuItemContainer> createState() => _MultiDropdownMenuItemContainerState();
+}
+
+class _MultiDropdownMenuItemContainerState extends State<MultiDropdownMenuItemContainer> {
+  @override
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(minHeight: kMenuItemHeight),
-      alignment: alignment,
-      child: child,
+      alignment: widget.alignment,
+      child: widget.child,
     );
   }
 }
